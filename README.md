@@ -30,51 +30,7 @@ ansible-galaxy install -r requirements.yml
 python3 -m pip install -r requirements.txt
 ```
 
-## Functionality
-
-* **Network interfaces**
-  * bridges
-  * bonding
-  * vlans
-  * ipv4 & ipv6
-
-
-* **Static routing**
-  * via interface up-/down-scripts
-  * via startup service
-
-
-* **Default opt-in**:
-  * installing basic network-diagnostic tools
-  * purging of orphaned interfaces
-  * support for:
-    * ipv6
-
-
-* **Default opt-out**:
-  * network startup-service to allow specific configurations
-  * anti-lockout via network-validation script
-  * support for:
-    * interface bonding
-    * interface bridging
-    * vlan interfaces
-    * traffic forwarding (_router-like_)
-
-## Info
-
-
-* **Note:** this role currently only supports debian systems (_ubuntu partly_)
-
-
-* **Note:** Most of the role's functionality can be opted in or out.
-
-  For all available options - see the default-config located in [the main defaults-file](https://github.com/ansibleguy/linux_networking/blob/latest/defaults/main/1_main.yml)!
-
-
-* **Warning:** Not every setting/variable you provide will be checked for validity. Bad config might break the role!
-
-
-* **Note:** The network-validation port-check only supports TCP target-ports as UDP-connectivity cannot be verified that easily.
+----
 
 ## Usage
 
@@ -173,6 +129,56 @@ There are also some useful **tags** available:
 * base
 * interfaces
 * routing
+
+----
+
+## Functionality
+
+* **Network interfaces**
+  * bridges
+  * bonding
+  * vlans
+  * ipv4 & ipv6
+
+
+* **Static routing**
+  * via interface up-/down-scripts
+  * via startup service
+
+
+* **Default opt-in**:
+  * installing basic network-diagnostic tools
+  * purging of orphaned interfaces
+  * support for:
+    * ipv6
+
+
+* **Default opt-out**:
+  * network startup-service to allow specific configurations
+  * anti-lockout via network-validation script
+  * support for:
+    * interface bonding
+    * interface bridging
+    * vlan interfaces
+    * traffic forwarding (_router-like_)
+
+## Info
+
+
+* **Note:** this role currently only supports debian systems (_ubuntu partly_)
+
+
+* **Note:** Most of the role's functionality can be opted in or out.
+
+  For all available options - see the default-config located in [the main defaults-file](https://github.com/ansibleguy/linux_networking/blob/latest/defaults/main/1_main.yml)!
+
+
+* **Warning:** Not every setting/variable you provide will be checked for validity. Bad config might break the role!
+
+
+* **Note:** The network-validation port-check only supports TCP target-ports as UDP-connectivity cannot be verified that easily.
+
+----
 
 ### Example
 

@@ -3,7 +3,7 @@
 galaxy_info:
   author: 'AnsibleGuy <guy@ansibleguy.net>'
   namespace: 'ansibleguy'
-  license: 'GPLv3'
+  license: 'MIT'
   issue_tracker_url: 'https://github.com/ansibleguy/linux_networking/issues'
   min_ansible_version: '2.14'
   description: 'Role to configure network interfaces and routing on linux servers'

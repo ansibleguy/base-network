@@ -1,6 +1,6 @@
 ---
 
-- name: Network | Debian-Based | Installing dependencies on controller
+- name: Network | Installing dependencies on controller
   ansible.builtin.pip:
     name: "{{ NW_HC.controller_required_mods }}"
     state: present
@@ -10,7 +10,7 @@
   become: false
   run_once: true
 
-- name: Network | Debian-Based | Notify User
+- name: Network | Notify User
   ansible.builtin.pause:
     prompt: "You need to install the python module 'netaddr' for this role to work correctly!"
   run_once: true
@@ -18,12 +18,12 @@
     - install_controller_requirements.failed is defined
     - install_controller_requirements.failed
 
-- name: Network | Debian-Based | Ubuntu => ask User
+- name: Network | Ubuntu => ask User
   ansible.builtin.pause:
     prompt: 'This role does currently not support the configuration of interfaces on ubuntu systems! Do you want to continue to run the basic tasks?'
   when: ansible_distribution|lower == 'ubuntu'
 
-- name: Network | Debian-Based | Remove old validator config-backups
+- name: Network | Remove old validator config-backups
   ansible.builtin.file:
     path: "{{ NW_HC.network_script_dir }}/backup"
     state: absent
@@ -31,7 +31,7 @@
   tags: [routing, interfaces, base]
   changed_when: false
 
-- name: Network | Debian-Based | Re-creating validator backup-directory
+- name: Network | Re-creating validator backup-directory
   ansible.builtin.file:
     path: "{{ NW_HC.network_script_dir }}/backup"
     owner: 'root'
@@ -42,13 +42,18 @@
   tags: [routing, interfaces, base]
   changed_when: false
 
-- name: Network | Debian-Based | Installing network tools
+- name: Network | Installing ifupdown2
+  ansible.builtin.apt:
+    name: 'ifupdown2'
+    state: present
+
+- name: Network | Installing network tools
   ansible.builtin.apt:
     name: "{{ NW.tools }}"
     state: present
   when: NW.install_tools
 
-- name: Network | Debian-Based | Installing vlan package
+- name: Network | Installing vlan package
   ansible.builtin.apt:
     name: ['vlan']
     state: present
@@ -56,7 +61,7 @@
   tags: interfaces
   register: prerequisite_vlan_pkg
 
-- name: Network | Debian-Based | Add the 802.1q module for vlan support (1/2)
+- name: Network | Add the 802.1q module for vlan support (1/2)
   community.general.modprobe:
     name: '8021q'
     state: present
@@ -64,14 +69,14 @@
   tags: interfaces
   register: prerequisite_vlan_mod
 
-- name: Network | Debian-Based | Add the 802.1q module for vlan support (2/2)
+- name: Network | Add the 802.1q module for vlan support (2/2)
   ansible.builtin.lineinfile:
     path: '/etc/modules'
     line: '8021q'
   when: prerequisite_vlan_mod.changed
   tags: interfaces
 
-- name: Network | Debian-Based | Installing bonding package
+- name: Network | Installing bonding package
   ansible.builtin.apt:
     name: ['ifenslave']
     state: present
@@ -79,7 +84,7 @@
   tags: interfaces
   register: prerequisite_bonding_pkg
 
-- name: Network | Debian-Based | Add the bonding module for nic-teaming support (1/2)
+- name: Network | Add the bonding module for nic-teaming support (1/2)
   community.general.modprobe:
     name: "{{ item }}"
     state: present
@@ -90,7 +95,7 @@
     - 'bonding'
     - 'mii'
 
-- name: Network | Debian-Based | Add the bonding module for nic-teaming support (2/2)
+- name: Network | Add the bonding module for nic-teaming support (2/2)
   ansible.builtin.lineinfile:
     path: '/etc/modules'
     line: "{{ item }}"
@@ -101,7 +106,7 @@
     - 'bonding'
     - 'mii'
 
-- name: Network | Debian-Based | Installing bridge package
+- name: Network | Installing bridge package
   ansible.builtin.apt:
     name: ['bridge-utils']
     state: present
@@ -109,7 +114,7 @@
   tags: interfaces
   register: prerequisite_bridge_pkg
 
-- name: Network | Debian-Based | Configuring sysctl to allow traffic forwarding
+- name: Network | Configuring sysctl to allow traffic forwarding
   ansible.posix.sysctl:
     name: "{{ item.key }}"
     value: "{{ item.value }}"
@@ -120,7 +125,7 @@
   when: NW.support.traffic_forwarding
   tags: routing
 
-- name: Network | Debian-Based | Configuring sysctl to dis-allow traffic forwarding
+- name: Network | Configuring sysctl to dis-allow traffic forwarding
   ansible.posix.sysctl:
     name: "{{ item.key }}"
     value: "{{ item.value }}"
@@ -131,7 +136,7 @@
   when: NW.support.traffic_forwarding
   tags: routing
 
-- name: Network | Debian-Based | Configuring sysctl to enable ipv6
+- name: Network | Configuring sysctl to enable ipv6
   ansible.posix.sysctl:
     name: "{{ item.key }}"
     value: "{{ item.value }}"
@@ -142,7 +147,7 @@
   when: NW.support.ipv6
   tags: [routing, interfaces]
 
-- name: Network | Debian-Based | Configuring sysctl to disable ipv6
+- name: Network | Configuring sysctl to disable ipv6
   ansible.posix.sysctl:
     name: "{{ item.key }}"
     value: "{{ item.value }}"
@@ -153,12 +158,8 @@
   when: not NW.support.ipv6
   tags: [routing, interfaces]
 
-# I can't seem to find a way to stop ansible from getting stuck when ip changes
-- name: Network | Debian-Based | Reloading network after prerequisit-changes
-  ansible.builtin.systemd:
-    name: 'networking.service'
-    state: restarted
-    no_block: true
+- name: Network | Reloading network after prerequisit-changes
+  ansible.builtin.command: 'ifreload -a'
   async: "{{ NW.reload_timeout }}"
   poll: 2
   when: >
@@ -168,13 +169,13 @@
     (prerequisite_bonding_pkg is defined and prerequisite_bonding_pkg.changed) or
     (prerequisite_bridge_pkg is defined and prerequisite_bridge_pkg.changed)
 
-- name: Network | Debian-Based | Waiting to re-establish connection
+- name: Network | Waiting to re-establish connection
   ansible.builtin.wait_for_connection:
     timeout: "{{ NW_HC.network_apply_timeout }}"
   register: connection_restore
   ignore_errors: true
 
-- name: Network | Debian-Based | Checking if ufw allows forwarded traffic
+- name: Network | Checking if ufw allows forwarded traffic
   ansible.builtin.shell: |
     set -o pipefail
     cat /etc/default/ufw | grep FORWARD_POLICY | grep -c DROP
@@ -186,7 +187,7 @@
   check_mode: false
   tags: routing
 
-- name: Network | Debian-Based | Nofifying user about ufw forward-policy
+- name: Network | Nofifying user about ufw forward-policy
   ansible.builtin.pause:
     prompt: "It seems that your ufw config does not allow forwarded traffic ('policy_forward') =>
       you might need to change this or create specific rules to allow forwarded traffic!
@@ -199,6 +200,6 @@
     - ufw_policy_forward.stdout|int == 1
     - ufw_config is undefined or (ufw_config.policy_forward is defined and ufw_config.policy_forward == 'DROP')
 
-- name: Network | Debian-Based | Processing debian config
+- name: Network | Processing debian config
   ansible.builtin.import_tasks: debian/main.yml
   when: ansible_distribution|lower == 'debian'

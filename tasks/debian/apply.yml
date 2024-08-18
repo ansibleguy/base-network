@@ -1,10 +1,7 @@
 ---
 
 - name: Network | Apply | Applying network config w/o validator
-  ansible.builtin.systemd:
-    name: 'networking.service'
-    state: restarted
-    no_block: true
+  ansible.builtin.command: 'ifreload -a'
   ignore_errors: true
   async: "{{ NW.reload_timeout }}"
   poll: 2
